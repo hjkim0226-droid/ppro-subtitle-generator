@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { subscribeBackgroundColor, evalTS } from "../lib/utils/bolt";
-import { fs, path } from "../lib/cep/node";
+import { fs, path, buffer } from "../lib/cep/node";
 import "./main.scss";
+
+// Buffer from Node.js
+const Buffer = buffer.Buffer;
 
 // ===== Types =====
 interface SubtitleStyle {
@@ -284,13 +287,19 @@ export const App = () => {
 
   // Select folder
   const selectFolder = () => {
-    if (window.cep) {
-      const result = window.cep.fs.showOpenDialogEx(false, true, "저장 폴더 선택", "");
-      if (result.data && result.data.length > 0) {
-        const selectedPath = result.data[0];
-        const nextNum = getNextFileNumber(selectedPath, output.filePrefix);
-        setOutput(prev => ({ ...prev, savePath: selectedPath, currentNumber: nextNum }));
-      }
+    try {
+      // @ts-ignore
+      const csi = new CSInterface();
+      const result = csi.evalScript('Folder.selectDialog("저장 폴더 선택")', (res: string) => {
+        if (res && res !== "null" && res !== "") {
+          // ExtendScript returns path with ~ prefix sometimes
+          const selectedPath = res.replace(/^~/, process.env.HOME || "");
+          const nextNum = getNextFileNumber(selectedPath, output.filePrefix);
+          setOutput(prev => ({ ...prev, savePath: selectedPath, currentNumber: nextNum }));
+        }
+      });
+    } catch (e) {
+      console.error("Folder selection error:", e);
     }
   };
 
