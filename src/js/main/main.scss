@@ -135,6 +135,15 @@ body {
     }
   }
 
+  .drag-number {
+    cursor: ew-resize;
+    user-select: none;
+
+    &:hover {
+      border-color: #4a9eff;
+    }
+  }
+
   input[type="color"] {
     width: 40px;
     height: 28px;

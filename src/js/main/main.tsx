@@ -11,6 +11,68 @@ const getBuffer = () => {
   return null;
 };
 
+// 드래그로 값 조정하는 컴포넌트
+interface DragNumberProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+const DragNumber: React.FC<DragNumberProps> = ({ value, onChange, min = -999, max = 999, step = 1 }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startValue = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    startX.current = e.clientX;
+    startValue.current = value;
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const diff = e.clientX - startX.current;
+
+      // Ctrl = 세밀 조정 (0.1배), Shift = 큰 조정 (10배)
+      let multiplier = step;
+      if (e.ctrlKey || e.metaKey) multiplier = step * 0.1;
+      if (e.shiftKey) multiplier = step * 10;
+
+      const newValue = Math.round(startValue.current + diff * multiplier);
+      const clamped = Math.max(min, Math.min(max, newValue));
+      onChange(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, min, max, step, onChange]);
+
+  return (
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+      onMouseDown={handleMouseDown}
+      className="drag-number"
+    />
+  );
+};
+
 // ===== Types =====
 interface SubtitleStyle {
   fontFamily: string;
@@ -39,6 +101,15 @@ interface OutputSettings {
 }
 
 // ===== Default Values =====
+// 폰트 목록
+const FONT_OPTIONS = [
+  { value: "Pretendard", label: "Pretendard" },
+  { value: "Noto Sans KR", label: "Noto Sans KR" },
+  { value: "Spoqa Han Sans Neo", label: "스포카 한 산스" },
+  { value: "NanumGothic", label: "나눔고딕" },
+  { value: "NanumSquare", label: "나눔스퀘어" },
+];
+
 const DEFAULT_STYLE: SubtitleStyle = {
   fontFamily: "Pretendard",
   fontWeight: "700",
@@ -90,6 +161,7 @@ const getNextFileNumber = (directory: string, prefix: string): number => {
 export const App = () => {
   const [bgColor, setBgColor] = useState("#282c34");
   const [text, setText] = useState("");
+  const [lastText, setLastText] = useState("");  // Undo용
   const [style, setStyle] = useState<SubtitleStyle>(DEFAULT_STYLE);
   const [output, setOutput] = useState<OutputSettings>(DEFAULT_OUTPUT);
   const [presets, setPresets] = useState<(PositionPreset | null)[]>(Array(9).fill(null));
@@ -100,7 +172,16 @@ export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Load saved settings
+  // Undo 기능 (Ctrl+Z)
+  const handleUndo = useCallback(() => {
+    if (lastText) {
+      setText(lastText);
+      setLastText("");
+      setStatus("텍스트 복구됨");
+    }
+  }, [lastText]);
+
+  // Load saved settings + keyboard shortcuts
   useEffect(() => {
     if (window.cep) {
       subscribeBackgroundColor(setBgColor);
@@ -113,7 +194,17 @@ export const App = () => {
     if (savedStyle) setStyle(JSON.parse(savedStyle));
     if (savedOutput) setOutput(JSON.parse(savedOutput));
     if (savedPresets) setPresets(JSON.parse(savedPresets));
-  }, []);
+
+    // Keyboard shortcut for undo
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleUndo]);
 
   // Save settings
   useEffect(() => {
@@ -267,6 +358,7 @@ export const App = () => {
       setOutput(prev => ({ ...prev, currentNumber: prev.currentNumber + 1 }));
 
       setStatus(`생성 완료: ${fileName}`);
+      setLastText(text);  // Undo용 저장
       setText(""); // Clear text after generation
 
     } catch (error: any) {
@@ -370,11 +462,24 @@ export const App = () => {
 
               <div className="style-grid">
                 <div className="style-row">
+                  <label>폰트</label>
+                  <select
+                    value={style.fontFamily}
+                    onChange={(e) => setStyle(s => ({ ...s, fontFamily: e.target.value }))}
+                  >
+                    {FONT_OPTIONS.map(font => (
+                      <option key={font.value} value={font.value}>{font.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="style-row">
                   <label>폰트 크기</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.fontSize}
-                    onChange={(e) => setStyle(s => ({ ...s, fontSize: parseInt(e.target.value) || 48 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, fontSize: v }))}
+                    min={8}
+                    max={200}
                   />
                 </div>
 
@@ -394,10 +499,11 @@ export const App = () => {
 
                 <div className="style-row">
                   <label>자간</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.letterSpacing}
-                    onChange={(e) => setStyle(s => ({ ...s, letterSpacing: parseInt(e.target.value) || 0 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, letterSpacing: v }))}
+                    min={-20}
+                    max={50}
                   />
                 </div>
 
@@ -433,37 +539,41 @@ export const App = () => {
 
                 <div className="style-row">
                   <label>패딩 (상하)</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.paddingV}
-                    onChange={(e) => setStyle(s => ({ ...s, paddingV: parseInt(e.target.value) || 0 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, paddingV: v }))}
+                    min={0}
+                    max={100}
                   />
                 </div>
 
                 <div className="style-row">
                   <label>패딩 (좌우)</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.paddingH}
-                    onChange={(e) => setStyle(s => ({ ...s, paddingH: parseInt(e.target.value) || 0 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, paddingH: v }))}
+                    min={0}
+                    max={100}
                   />
                 </div>
 
                 <div className="style-row">
                   <label>모서리</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.borderRadius}
-                    onChange={(e) => setStyle(s => ({ ...s, borderRadius: parseInt(e.target.value) || 0 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, borderRadius: v }))}
+                    min={0}
+                    max={50}
                   />
                 </div>
 
                 <div className="style-row">
                   <label>텍스트 Y 오프셋</label>
-                  <input
-                    type="number"
+                  <DragNumber
                     value={style.textOffsetY}
-                    onChange={(e) => setStyle(s => ({ ...s, textOffsetY: parseInt(e.target.value) || 0 }))}
+                    onChange={(v) => setStyle(s => ({ ...s, textOffsetY: v }))}
+                    min={-50}
+                    max={50}
                   />
                 </div>
               </div>
