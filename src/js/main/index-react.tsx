@@ -1,10 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { initializeCEP } from "../lib/utils/init-cep";
+import { initBolt } from "../lib/utils/bolt";
 import { App } from "./main";
 import "./main.scss";
 
-initializeCEP();
+// Initialize CEP + Load ExtendScript
+initBolt();
 
 const container = document.getElementById("root");
 if (container) {

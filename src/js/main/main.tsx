@@ -1,10 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { subscribeBackgroundColor, evalTS } from "../lib/utils/bolt";
-import { fs, path, buffer } from "../lib/cep/node";
+import { fs, path } from "../lib/cep/node";
 import "./main.scss";
 
-// Buffer from Node.js
-const Buffer = buffer.Buffer;
+// Buffer from Node.js (CEP environment)
+const getBuffer = () => {
+  if (typeof window !== "undefined" && (window as any).cep) {
+    return require("buffer").Buffer;
+  }
+  return null;
+};
 
 // ===== Types =====
 interface SubtitleStyle {
@@ -18,6 +23,7 @@ interface SubtitleStyle {
   paddingV: number;
   paddingH: number;
   borderRadius: number;
+  textOffsetY: number;  // 텍스트 Y 오프셋
 }
 
 interface PositionPreset {
@@ -44,6 +50,7 @@ const DEFAULT_STYLE: SubtitleStyle = {
   paddingV: 16,
   paddingH: 24,
   borderRadius: 8,
+  textOffsetY: 0,
 };
 
 const DEFAULT_OUTPUT: OutputSettings = {
@@ -86,7 +93,7 @@ export const App = () => {
   const [style, setStyle] = useState<SubtitleStyle>(DEFAULT_STYLE);
   const [output, setOutput] = useState<OutputSettings>(DEFAULT_OUTPUT);
   const [presets, setPresets] = useState<(PositionPreset | null)[]>(Array(9).fill(null));
-  const [presetMode, setPresetMode] = useState<"none" | "save" | "apply">("none");
+  const [presetMode, setPresetMode] = useState<"none" | "save">("none");
   const [status, setStatus] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"subtitle" | "position">("subtitle");
 
@@ -161,7 +168,7 @@ export const App = () => {
     ctx.fillStyle = style.textColor;
     ctx.textBaseline = "middle";
     ctx.letterSpacing = `${style.letterSpacing}px`;
-    ctx.fillText(text, style.paddingH, height / 2);
+    ctx.fillText(text, style.paddingH, height / 2 + style.textOffsetY);
   }, [text, style]);
 
   useEffect(() => {
@@ -170,6 +177,8 @@ export const App = () => {
 
   // Generate PNG
   const generatePNG = async () => {
+    console.log("generatePNG called");
+
     if (!text.trim()) {
       setStatus("텍스트를 입력하세요");
       return;
@@ -181,10 +190,20 @@ export const App = () => {
     }
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log("canvas is null");
+      return;
+    }
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      console.log("ctx is null");
+      return;
+    }
+
+    console.log("Buffer:", getBuffer());
+    console.log("fs:", fs);
+    console.log("path:", path);
 
     setStatus("생성 중...");
 
@@ -221,7 +240,7 @@ export const App = () => {
       ctx.fillStyle = style.textColor;
       ctx.textBaseline = "middle";
       ctx.letterSpacing = `${style.letterSpacing}px`;
-      ctx.fillText(text, style.paddingH, height / 2);
+      ctx.fillText(text, style.paddingH, height / 2 + style.textOffsetY);
 
       // Get data URL and save
       const dataUrl = canvas.toDataURL("image/png");
@@ -233,8 +252,13 @@ export const App = () => {
       const filePath = path.join(output.savePath, fileName);
 
       // Save file
-      const buffer = Buffer.from(base64, "base64");
-      fs.writeFileSync(filePath, buffer);
+      const BufferClass = getBuffer();
+      if (!BufferClass) {
+        setStatus("Buffer 로드 실패");
+        return;
+      }
+      const fileBuffer = BufferClass.from(base64, "base64");
+      fs.writeFileSync(filePath, fileBuffer);
 
       // Import to Premiere Pro
       await evalTS("importFile", filePath);
@@ -268,8 +292,8 @@ export const App = () => {
         setStatus("위치 가져오기 실패");
       }
       setPresetMode("none");
-    } else if (presetMode === "apply") {
-      // Apply preset to selected clip
+    } else {
+      // Apply preset directly
       const preset = presets[index];
       if (preset) {
         try {
@@ -281,7 +305,6 @@ export const App = () => {
       } else {
         setStatus("저장된 프리셋 없음");
       }
-      setPresetMode("none");
     }
   };
 
@@ -434,6 +457,15 @@ export const App = () => {
                     onChange={(e) => setStyle(s => ({ ...s, borderRadius: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
+
+                <div className="style-row">
+                  <label>텍스트 Y 오프셋</label>
+                  <input
+                    type="number"
+                    value={style.textOffsetY}
+                    onChange={(e) => setStyle(s => ({ ...s, textOffsetY: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
               </div>
             </section>
 
@@ -512,18 +544,11 @@ export const App = () => {
               >
                 저장
               </button>
-              <button
-                className={`mode-btn ${presetMode === "apply" ? "active" : ""}`}
-                onClick={() => setPresetMode(presetMode === "apply" ? "none" : "apply")}
-              >
-                포지션
-              </button>
             </div>
 
             <p className="preset-hint">
               {presetMode === "save" && "프리셋 버튼을 클릭하면 현재 클립 위치가 저장됩니다"}
-              {presetMode === "apply" && "프리셋 버튼을 클릭하면 선택된 클립에 위치가 적용됩니다"}
-              {presetMode === "none" && "저장 또는 포지션 버튼을 먼저 클릭하세요"}
+              {presetMode === "none" && "프리셋 클릭 → 적용 / [저장] 클릭 후 프리셋 클릭 → 저장"}
             </p>
           </section>
         )}

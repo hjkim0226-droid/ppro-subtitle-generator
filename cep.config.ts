@@ -8,7 +8,7 @@ const config: CEP_Config = {
   symlink: "local",
   port: 3001,
   servePort: 5001,
-  startingDebugPort: 8861,
+  startingDebugPort: 8870,
   extensionManifestVersion: 6.0,
   requiredRuntimeVersion: 9.0,
   hosts: [
