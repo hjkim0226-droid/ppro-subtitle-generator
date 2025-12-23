@@ -220,15 +220,22 @@ export const App = () => {
   }, [presets]);
 
   // Update preview
-  const updatePreview = useCallback(() => {
+  const updatePreview = useCallback(async () => {
     const canvas = previewCanvasRef.current;
     if (!canvas || !text) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // 폰트 로드 대기
+    try {
+      await document.fonts.load(`${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`);
+    } catch (e) {
+      console.log("Font load warning:", e);
+    }
+
     // Set font
-    ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+    ctx.font = `${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`;
 
     // Measure text
     const metrics = ctx.measureText(text);
@@ -243,7 +250,7 @@ export const App = () => {
     canvas.height = height;
 
     // Reset font after resize
-    ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+    ctx.font = `${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`;
 
     // Draw background
     ctx.fillStyle = hexToRgba(style.bgColor, style.bgOpacity);
@@ -299,8 +306,15 @@ export const App = () => {
     setStatus("생성 중...");
 
     try {
+      // 폰트 로드 대기
+      try {
+        await document.fonts.load(`${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`);
+      } catch (e) {
+        console.log("Font load warning:", e);
+      }
+
       // Set font
-      ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+      ctx.font = `${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`;
 
       // Measure text
       const metrics = ctx.measureText(text);
@@ -315,7 +329,7 @@ export const App = () => {
       canvas.height = height;
 
       // Reset font after resize
-      ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+      ctx.font = `${style.fontWeight} ${style.fontSize}px "${style.fontFamily}"`;
 
       // Draw background
       ctx.fillStyle = hexToRgba(style.bgColor, style.bgOpacity);
@@ -474,16 +488,6 @@ export const App = () => {
                 </div>
 
                 <div className="style-row">
-                  <label>폰트 크기</label>
-                  <DragNumber
-                    value={style.fontSize}
-                    onChange={(v) => setStyle(s => ({ ...s, fontSize: v }))}
-                    min={8}
-                    max={200}
-                  />
-                </div>
-
-                <div className="style-row">
                   <label>굵기</label>
                   <select
                     value={style.fontWeight}
@@ -495,6 +499,16 @@ export const App = () => {
                     <option value="700">Bold</option>
                     <option value="800">ExtraBold</option>
                   </select>
+                </div>
+
+                <div className="style-row">
+                  <label>폰트 크기</label>
+                  <DragNumber
+                    value={style.fontSize}
+                    onChange={(v) => setStyle(s => ({ ...s, fontSize: v }))}
+                    min={8}
+                    max={200}
+                  />
                 </div>
 
                 <div className="style-row">
