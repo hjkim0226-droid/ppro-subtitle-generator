@@ -1,0 +1,342 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  color: #e0e0e0;
+  overflow-x: hidden;
+}
+
+.app {
+  min-height: 100vh;
+  padding: 12px;
+}
+
+.container {
+  max-width: 100%;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+
+  h1 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+// Tabs
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 4px;
+
+  .tab {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ccc;
+    }
+
+    &.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  }
+}
+
+// Sections
+.section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+
+  h3 {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #aaa;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+}
+
+// Text Input
+.text-input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #4a9eff;
+  }
+
+  &::placeholder {
+    color: #666;
+  }
+}
+
+// Style Grid
+.style-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.style-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  label {
+    flex: 0 0 80px;
+    margin-bottom: 0;
+  }
+
+  input[type="number"],
+  select {
+    flex: 1;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+
+    &:focus {
+      outline: none;
+      border-color: #4a9eff;
+    }
+  }
+
+  input[type="color"] {
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  input[type="range"] {
+    flex: 1;
+  }
+
+  span {
+    min-width: 40px;
+    text-align: right;
+    color: #888;
+  }
+}
+
+// Output Settings
+.output-row {
+  margin-bottom: 8px;
+
+  label {
+    margin-bottom: 4px;
+  }
+
+  input {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+
+    &:focus {
+      outline: none;
+      border-color: #4a9eff;
+    }
+  }
+}
+
+.path-input {
+  display: flex;
+  gap: 4px;
+
+  input {
+    flex: 1;
+  }
+
+  button {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+// Preview
+.preview-section {
+  .preview-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  .preview-canvas {
+    max-width: 100%;
+  }
+}
+
+// Generate Button
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #3a8eef;
+  }
+
+  &:active {
+    background: #2a7edf;
+  }
+}
+
+// Position Presets
+.position-section {
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .preset-btn {
+    position: relative;
+    aspect-ratio: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #666;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    &.has-data {
+      border-color: #4a9eff;
+      color: #4a9eff;
+    }
+
+    &.active-mode {
+      animation: pulse 1s infinite;
+    }
+
+    .preset-indicator {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 8px;
+      color: #4a9eff;
+    }
+  }
+
+  .preset-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+
+      &.active {
+        background: #4a9eff;
+        border-color: #4a9eff;
+        color: #fff;
+      }
+    }
+  }
+
+  .preset-hint {
+    text-align: center;
+    color: #666;
+    font-size: 11px;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+// Status
+.status {
+  text-align: center;
+  padding: 8px;
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  color: #888;
+  font-size: 11px;
+}
